@@ -1,0 +1,279 @@
+---
+title: "realtime-analysis"
+author: "Amelia Chu"
+date: "4/10/2018"
+output:
+  pdf_document: default
+  html_document: default
+---
+```{r}
+
+```
+
+```{r}
+library("forecast")
+library("tseries")
+```
+
+```{r}
+data <- read.csv("/Users/chuamelia/Google Drive/Forecasting Time Series/citi-bike/ts-realtime-analysis-bike/status_161.csv")
+date <- as.POSIXlt(data$last_updated)
+time <- 1:length(date)
+rupee <- data$num_bikes_available + 1 
+```
+
+
+```{r}
+log.rupee <- log(rupee)
+diff.log.rupee <- c(NA, diff(log.rupee))
+diff2.log.rupee <- c(NA, diff(diff.log.rupee))
+```
+
+```{r}
+plot(date, rupee, type="l",
+     xlab="Date", ylab="Rupee")
+plot(date, log.rupee, type="l",
+     xlab="Date", ylab="Log Rupee")
+plot(date, diff.log.rupee, type="l",
+     xlab="Date", ylab="Differenced Log Rupee")
+plot(date, diff2.log.rupee, type="l",
+     xlab="Date", ylab="Differenced2 Log Rupee")
+```
+
+
+```{r}
+# Time series plot
+plot(date, log.rupee, type="l",
+     xlab="Date", ylab="Log Rupee")
+
+# ACF and PACF
+acf(log.rupee, na.action = na.pass)
+pacf(log.rupee, na.action = na.pass)
+```
+
+
+```{r}
+# Time series plot
+plot(date, diff.log.rupee, type="l",
+     xlab="Date", ylab="Differenced Log Unemployment")
+# ACF and PACF
+acf(diff.log.rupee, na.action = na.pass)
+pacf(diff.log.rupee, na.action = na.pass)
+```
+
+
+```{r}
+## Add code to compute the second difference and make the plots.
+
+# Time series plot
+plot(date, diff2.log.rupee, type="l",
+     xlab="Date", ylab="Differenced2 Log Unemployment")
+# ACF and PACF
+acf(diff2.log.rupee, na.action = na.pass)
+pacf(diff2.log.rupee, na.action = na.pass)
+```
+
+
+```{r}
+# Add code to compute the AICc values.  You can modify the code from
+# http://ptrckprry.com/course/forecasting/lecture/nasdaq-arch.html
+# if you don't want to do this by hand.
+
+d <- 1
+
+# choose p, q with AICc
+for (include.constant in c(FALSE, TRUE)) {
+    for (p in 0:4) {
+        for (q in 0:4) {
+            # work-around bug in R by manually differencing
+            fit <- Arima(diff(log.rupee), c(p,0,q),
+                         include.constant=include.constant, method="ML")
+             cat("ARIMA",
+                 "(", p, ",", d, ",", q, ")",
+                 "(constant=", include.constant, ")",
+                 " : ", fit$aicc, "\n", sep="")
+        }
+    }
+}
+
+```
+
+Here is code to fit the model, then compute residuals and the fitted values:
+
+```{r}
+# Add code to fit the ARIMA model.
+fit.mean <- Arima(log.rupee, c(2, 1, 2), include.constant=FALSE)
+```
+
+Here are the residuals, with the last 10 residuals printed out:
+```{r}
+# Uncomment:
+resid <- residuals(fit.mean)
+tail(resid, n=10)
+```
+
+
+Here are the fitted values, with the last 10 fitted values printed out:
+```{r}
+f <- fitted.values(fit.mean)
+tail(f, n=10)
+```
+
+
+Here is the one step ahead forecast and 95% forecast interval:
+
+```{r}
+forecast(fit.mean, h=1, level = 95)
+```
+
+
+Here is a plot of the residuals:
+
+```{r}
+plot(date, resid, type="l",
+     xlab="Date", ylab="Rupee Residuals")
+```
+
+Here are an ACF and PACF of the residuals:
+
+```{r}
+# Add ACF, PACF of residuals.
+# ACF and PACF
+acf(resid, na.action = na.pass)
+pacf(resid, na.action = na.pass)
+```
+
+
+```{r}
+# Add ACF, PACF of squared residuals.
+acf(resid^2, na.action = na.pass)
+pacf(resid^2, na.action = na.pass)
+```
+
+
+Here are the AICc values for the ARCH(q):
+
+```{r}
+q <- 0:10
+loglik <- rep(NA, length(q))
+N <- length(resid)
+
+for (i in 1:length(q)) {
+    if (q[i] == 0) {
+        loglik[i] <- -0.5 * N * (1 + log(2 * pi * mean(resid^2)))
+    } else {
+        fit <- garch(resid, c(0,q[i]), trace=FALSE)
+        loglik[i] <- logLik(fit)
+    }
+}
+
+k <- q + 1
+aicc <- -2 * loglik  + 2 * k * N / (N - k - 1)
+
+print(data.frame(q, loglik, aicc))
+```
+
+
+Here is the AICc for the GARCH(1,1):
+
+```{r}
+# Add code to compute the AICc values for the GARCH(1,1) models.
+# You can modify the code from 
+# http://ptrckprry.com/course/forecasting/lecture/nasdaq-arch.html
+fit <- garch(resid, c(1,1), trace=FALSE)
+loglik <- logLik(fit)
+k <- 2
+aicc <- -2 * loglik  + 2 * k * N / (N - k - 1)
+
+print(data.frame(loglik, aicc))
+```
+
+
+Here are the summary and log likelihood of the selected model:
+
+```{r}
+# replace the ???? with code to fite the model, then uncomment
+# the other lines.
+fit.var <- garch(resid, c(1,1), trace=FALSE)
+summary(fit.var)
+logLik(fit.var)
+```
+
+```{r}
+# You will need to to this by hand.  First, get the forecast (conditional
+# mean) from the end of Problem 2.  Store this in a variable called "f1":
+f1 <- 2.995447
+
+# Next, you need to determine the conditional variance, which we will store
+# in a variable called "h1".
+#
+# To do this, use the output from Problem 4 to determine the coefficients
+# (omega, alpha, etc.).  Use the output from Problem 2 to get the most
+# recent residuals (shocks).  If your model is GARCH(1,1), you will also need
+# the most recent conditional variance, which you can get from Problem 6.
+# 
+# Copy and paste the values and compute the conditional variance:
+h1 <- fit.var$fit[,1]^2
+
+# Finally, we compute the 95% forecast interval using the following command:
+f1 + c(-1, 1) * 1.96 * sqrt(h1)
+```
+
+Here are the conditional variances, with the last 10 values printed out:
+
+```{r}
+# Hint: see http://ptrckprry.com/course/forecasting/lecture/nasdaq-arch.html
+
+ht <- fit.var$fit[,1]^2
+tail(ht, n=10)
+```
+
+
+
+Here is a plot of the conditional variances:
+
+```{r}
+# Add plot of the conditional variances
+plot(date, ht, type="l", col=4)
+```
+
+Here is a time series plot which simultaneously shows the log exchange rates,
+together with the ARIMA-ARCH one-step-ahead 95% forecast intervals based on
+information available in the previous day:
+
+```{r fig.width=12, fig.height=8}
+# Uncomment the following lines to make the plot:
+
+plot(date, log.rupee, type="l")
+lines(date, f + 1.96 * sqrt(ht), lty=2, col=2)
+lines(date,  f - 1.96 * sqrt(ht), lty=2, col=2)
+```
+
+Here is a normal probability plot of the ARCH residuals.
+
+```{r}
+# Add code to compute the arch residuals:
+# resid.arch <- ????
+resid.arch <- resid / sqrt(ht)
+plot(date, resid.arch, col=4, type="l")
+
+# Now, add code to make a normal probability plot (with the qqnorm command)
+qqnorm(resid.arch)
+```
+
+
+Here is a count of how many prediction interval failures there were:
+
+```{r}
+# The following command counts the number of arch residuals bigger than
+# 0.5.  Modify this command to count the number of times the prediciton
+# interval failed:
+
+sum(abs(resid.arch) > log.rupee, na.rm=TRUE)
+```
+
+The number of prediction intervals is:
+```{r}
+# Uncomment to get a count of the number of non-missing arch residuals:
+sum(!is.na(resid.arch))
+```
