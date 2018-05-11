@@ -45,7 +45,8 @@ plot(date, log.status, type="l",
      xlab="Date", ylab="Log Bikes Available")
 
 # ACF and PACF
-acf(log.status, na.action = na.pass)
+Acf(log.status, na.action = na.pass)
+log.status.acf <- Acf(log.status, na.action = na.pass, plot = FALSE)
 pacf(log.status, na.action = na.pass)
 ```
 
