@@ -16,5 +16,6 @@ diff2.log.status.table <- data.frame(date,  diff2.log.status)
 write.csv(diff2.log.status.table, file="/Users/chuamelia/Desktop/ameliachu.github.io/realtime_bike/diff2logstatus.csv", row.names = FALSE)
 
 log.status.acf <- Acf(log.status, na.action = na.pass, plot = FALSE)
-log.status.acf.table <- data.frame(log.status.acf$lag,  log.status.acf$acf)[-1,]
+#log.status.acf.table <- data.frame(log.status.acf$lag,  log.status.acf$acf)[-1,]
+log.status.acf.table <- data.frame( log.status.acf$acf)[-1,]
 write.csv(log.status.acf.table, file="/Users/chuamelia/Desktop/ameliachu.github.io/realtime_bike/logstatusacf.csv", row.names = FALSE)

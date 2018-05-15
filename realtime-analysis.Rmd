@@ -48,6 +48,7 @@ plot(date, log.status, type="l",
 Acf(log.status, na.action = na.pass)
 log.status.acf <- Acf(log.status, na.action = na.pass, plot = FALSE)
 pacf(log.status, na.action = na.pass)
+log.status.acf.table <- data.frame(log.status.acf$lag,  log.status.acf$acf)[-1,]
 ```
 
 
@@ -58,6 +59,8 @@ plot(date, diff.log.status, type="l",
 # ACF and PACF
 Acf(diff.log.status, na.action = na.pass)
 pacf(diff.log.status, na.action = na.pass)
+
+
 ```
 
 
