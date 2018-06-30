@@ -1,5 +1,5 @@
 ---
-title: "realtime-analysis"
+title: "STAT-GB Forecasting Timeseries - citibike-realtime-analysis"
 author: "Amelia Chu"
 date: "4/10/2018"
 output:
@@ -7,27 +7,29 @@ output:
   pdf_document: default
 ---
 
-
-```{r echo=FALSE}
+```{r libraries, echo=FALSE}
 library("forecast")
 library("tseries")
 ```
 
-```{r}
+Loading in Data
+```{r data}
 data <- read.csv("/Users/chuamelia/Google Drive/Forecasting Time Series/citi-bike/ts-realtime-analysis-bike/status_161.csv")
 date <- as.POSIXlt(data$last_updated)
 time <- 1:length(date)
 status <- data$num_bikes_available + 1 
 ```
 
-
+Taking logs and differences
 ```{r}
 log.status <- log(status)
 diff.log.status <- c(NA, diff(log.status))
 diff2.log.status <- c(NA, diff(diff.log.status))
 ```
 
-```{r}
+### Figure 2. Plotting timeseries of Bikes Available, its log and differenced logs.
+```{r fig-2, fig.width=12, fig.height=8}
+par(mfrow=c(2,2))
 plot(date, status, type="l",
      xlab="Date", ylab="Bikes Available")
 plot(date, log.status, type="l",
@@ -38,35 +40,35 @@ plot(date, diff2.log.status, type="l",
      xlab="Date", ylab="Differenced2 Log Bikes Available")
 ```
 
-
-```{r}
+### Figures 2b, 3a, 3b. Timeseries of Log Bikes Available and ACF/PACF
+```{r fig.width=12, fig.height=8}
 # Time series plot
+layout(matrix(c(1,1,2,3), 2, 2, byrow = TRUE))
 plot(date, log.status, type="l",
      xlab="Date", ylab="Log Bikes Available")
 
 # ACF and PACF
+
 Acf(log.status, na.action = na.pass)
 log.status.acf <- Acf(log.status, na.action = na.pass, plot = FALSE)
 pacf(log.status, na.action = na.pass)
 log.status.acf.table <- data.frame(log.status.acf$lag,  log.status.acf$acf)[-1,]
 ```
 
-
-```{r}
+### Figures 2c, 3c, 3d. Timeseries of Differenced Log Bikes Available and ACF/PACF
+```{r fig.width=12, fig.height=8}
+layout(matrix(c(1,1,2,3), 2, 2, byrow = TRUE))
 # Time series plot
 plot(date, diff.log.status, type="l",
      xlab="Date", ylab="Differenced Log Bikes Available")
 # ACF and PACF
 Acf(diff.log.status, na.action = na.pass)
 pacf(diff.log.status, na.action = na.pass)
-
-
 ```
 
-
-```{r}
-## Add code to compute the second difference and make the plots.
-
+### Figures 2d, 3e, 3f. Timeseries of Twice-Differenced Log Bikes Available and ACF/PACF
+```{r fig.width=12, fig.height=8}
+layout(matrix(c(1,1,2,3), 2, 2, byrow = TRUE))
 # Time series plot
 plot(date, diff2.log.status, type="l",
      xlab="Date", ylab="Differenced2 Log Bikes Available")
@@ -75,12 +77,8 @@ Acf(diff2.log.status, na.action = na.pass)
 pacf(diff2.log.status, na.action = na.pass)
 ```
 
-
-```{r}
-# Add code to compute the AICc values.  You can modify the code from
-# http://ptrckprry.com/course/forecasting/lecture/nasdaq-arch.html
-# if you don't want to do this by hand.
-
+### Figure 4. Computing the AICc values for ARIMA Candidate Models
+```{r }
 d <- 1
 
 # choose p, q with AICc
@@ -103,27 +101,25 @@ for (include.constant in c(FALSE, TRUE)) {
 
 ```
 
-Here is code to fit the model, then compute residuals and the fitted values:
+### Figure 5. Final Estimates of ARIMA Parameters
+
+Here is code to fit the ARIMA model, then compute residuals and the fitted values:
 
 ```{r}
-# Add code to fit the ARIMA model.
 fit.mean <- Arima(log.status, c(3, 1, 3), include.constant=FALSE)
-```
-```{r}
 summary(fit.mean)
 ```
 
-
+## Figure 6. Modified Box Pierce (Ljung-Box) Diagnostics
 ```{r}
-Box.test(diff.log.status, lag = 12, type = c("Box-Pierce", "Ljung-Box"), fitdf = 0)
 Box.test(diff.log.status, lag = 24, type = c("Box-Pierce", "Ljung-Box"), fitdf = 0)
 Box.test(diff.log.status, lag = 36, type = c("Box-Pierce", "Ljung-Box"), fitdf = 0)
 Box.test(diff.log.status, lag = 48, type = c("Box-Pierce", "Ljung-Box"), fitdf = 0)
 ```
+### Figure 7. ARIMA Residual Plots
 
 Here are the residuals, with the last 10 residuals printed out:
 ```{r}
-# Uncomment:
 resid <- residuals(fit.mean)
 tail(resid, n=10)
 ```
@@ -135,37 +131,39 @@ f <- fitted.values(fit.mean)
 tail(f, n=10)
 ```
 
-
+### Figure 10. Forecast Intervals for ARIMA Model
 Here is the one step ahead forecast and 95% forecast interval:
 
 ```{r}
 forecast(fit.mean, h=1, level = 95)
 ```
 
-
 Here is a plot of the residuals:
 
-```{r}
+```{r fig-7a}
 plot(date, resid, type="l",
      xlab="Date", ylab="Bikes Available Residuals")
 ```
 
-Here are an ACF and PACF of the residuals:
+Here are the ACF and PACF of the residuals:
 
-```{r}
-# Add ACF, PACF of residuals.
+```{r fig.width=12, fig.height=6}
 # ACF and PACF
+par(mfrow=c(1,2))
 Acf(resid, na.action = na.pass)
 Pacf(resid, na.action = na.pass)
 ```
 
+Here are the ACF and PACF of the squared-residuals:
 
-```{r}
+```{r fig.width=12, fig.height=6}
 # Add ACF, PACF of squared residuals.
+par(mfrow=c(1,2))
 Acf(resid^2, na.action = na.pass)
 Pacf(resid^2, na.action = na.pass)
 ```
 
+### Figure 8. AICc for Candidate ARCH/GARCH Models
 
 Here are the AICc values for the ARCH(q):
 
@@ -187,6 +185,13 @@ k <- q + 1
 aicc <- -2 * loglik  + 2 * k * N / (N - k - 1)
 
 print(data.frame(q, loglik, aicc))
+
+```
+Exporting the arch aicc table for website:
+
+```{r}
+arch.aicc.table <- data.frame(q, loglik, aicc)
+write.csv(arch.aicc.table, file="/Users/chuamelia/Desktop/ameliachu.github.io/realtime_bike/arch-aicc.csv", row.names = FALSE)
 ```
 
 
@@ -202,6 +207,13 @@ print(data.frame(loglik, aicc))
 ```
 
 
+```{r echo=FALSE}
+# Exporting the garch aicc table for website:
+garch.aicc.table <- data.frame(loglik, aicc)
+write.csv(garch.aicc.table, file="/Users/chuamelia/Desktop/ameliachu.github.io/realtime_bike/garch-aicc.csv", row.names = FALSE)
+```
+
+### Figure 9. Model Output for GARCH
 Here are the summary and log likelihood of the selected model:
 
 ```{r}
@@ -209,29 +221,29 @@ fit.var <- garch(resid, c(1,1), trace=FALSE)
 summary(fit.var)
 logLik(fit.var)
 ```
+### Figure 10. Forecast Intervals for ARIMA-ARCH Model
 
 ```{r}
-a0 <- 5.255e-07
-a1 <- 2.037e-02
-b1 <- 9.812e-01
+a0 <- coefficients(fit.var)["a0"]
+a1 <- coefficients(fit.var)["a1"]
+b1 <- coefficients(fit.var)["b1"]
 f1 <- 1.943208
-h1<- a0 + a1*(tail(fit.mean$residuals,1)^2) +b1 * tail(fit.var$fit[,1],1)
 
 # conditional variance:
-#h1 <- fit.var$fit[,1]^2
+h1<- a0 + a1*(tail(fit.mean$residuals,1)^2) +b1 * tail(fit.var$fit[,1],1)
 
 # Finally, we compute the 95% forecast interval:
 f1 + -1 * 1.96 * sqrt(h1)
 f1 + 1 * 1.96 * sqrt(h1)
 ```
 
+### Figure 11. Conditional Variances
 Here are the conditional variances, with the last 10 values printed out:
 
 ```{r}
 ht <- fit.var$fit[,1]^2
 tail(ht, n=10)
 ```
-
 
 
 Here is a plot of the conditional variances:
@@ -241,9 +253,23 @@ Here is a plot of the conditional variances:
 plot(date, ht, type="l", col=4)
 ```
 
-Here is a time series plot which simultaneously shows the log exchange rates,
+```{r echo=FALSE}
+# Exporting the conditional variances table for website:
+condition.var.table <- data.frame(date, ht)
+write.csv(condition.var.table, file="/Users/chuamelia/Desktop/ameliachu.github.io/realtime_bike/condition-var.csv", row.names = FALSE)
+```
+
+Here is a time series plot which simultaneously shows the log bikes available,
 together with the ARIMA-ARCH one-step-ahead 95% forecast intervals based on
 information available in the previous day:
+
+```{r}
+upper <- f + 1.96 * sqrt(ht)
+lower <- f - 1.96 * sqrt(ht)
+log.status.intervals <- paste(upper,";", log.status,";", lower,sep="")
+forecast.int <- data.frame(date, log.status.intervals)
+write.csv(forecast.int, file="/Users/chuamelia/Desktop/ameliachu.github.io/realtime_bike/12b_forecast-int.csv", row.names = FALSE)
+```
 
 ```{r fig.width=12, fig.height=8}
 plot(date, log.status, type="l")
@@ -252,23 +278,39 @@ lines(date,  f - 1.96 * sqrt(ht), lty=2, col=2)
 ```
 
 ```{r}
-plot(forecast(fit.mean, h=50, level=95),include = 1000, col=2)
+plot(forecast(fit.mean, h=100, level=95), col=2)
+arima.interval <- data.frame(forecast(fit.mean, h=100, level=95))
+log.status.actuals <- c(paste(log.status,";", log.status,";",log.status,sep=""), rep("null;null;null", nrow(arima.interval)))
+log.status.forecasts <- c(rep("null;null;null", length(log.status)), paste(arima.interval$Lo.95,";", arima.interval$Point.Forecast,";", arima.interval$Hi.95,sep=""))
+time <- 1:length(log.status.actuals)
+arima.forecasts <- data.frame(time, log.status.actuals, log.status.forecasts)
+write.csv(arima.forecasts, file="/Users/chuamelia/Desktop/ameliachu.github.io/realtime_bike/12a_arima-forecast-int.csv", row.names = FALSE)
 ```
 
 Here is a normal probability plot of the ARCH residuals.
 
 ```{r}
 library("e1071")  
-# Add code to compute the arch residuals:
-# resid.arch <- ????
+# Here we compute the arch residuals:
+
 resid.arch <- resid / sqrt(ht)
 plot(date, resid.arch, col=4, type="l")
 
-# Now, add code to make a normal probability plot (with the qqnorm command)
+#Here is the normal probability plot:
 qqnorm(resid.arch)
-qqline(resid.arch)
+qqlinetable <- data.frame(qqline(resid.arch))
 
 kurtosis(resid.arch, na.rm=TRUE)
+#qq.resid.arch <- data.frame(qqnorm(resid.arch, plot.it = FALSE))
+#write.csv(qq.resid.arch, file="/Users/chuamelia/Desktop/ameliachu.github.io/realtime_bike/13_qqplot.csv", row.names = FALSE)
+```
+
+
+```{r}
+#https://stackoverflow.com/questions/37897274/plot-lm-extracting-numbers-labelled-in-the-diagnostic-q-q-plot
+resid.arch <- na.omit(resid.arch)
+x <- sort(abs(resid.arch), decreasing = TRUE)
+x[1:4]
 ```
 
 

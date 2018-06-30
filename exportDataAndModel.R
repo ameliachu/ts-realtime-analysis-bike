@@ -42,3 +42,31 @@ diff2.log.status.pacf <- Pacf(diff2.log.status, na.action = na.pass, plot = FALS
 diff2.log.status.pacf.table <- data.frame( diff2.log.status.pacf$acf)
 names(diff2.log.status.pacf.table) <- c("pacf")
 write.csv(diff2.log.status.pacf.table, file="/Users/chuamelia/Desktop/ameliachu.github.io/realtime_bike/diff2logstatuspacf.csv", row.names = FALSE)
+
+fit.mean <- Arima(log.status, c(3, 1, 3), include.constant=FALSE)
+resid <- residuals(fit.mean)
+arima.resid.acf <- Acf(resid, na.action = na.pass, plot = FALSE)
+arima.resid.acf.table <- as.data.frame( arima.resid.acf$acf)[-1,]
+arima.resid.acf.table <- as.data.frame( arima.resid.acf.table)
+names(arima.resid.acf.table) <- c("acf")
+write.csv(arima.resid.acf.table, file="/Users/chuamelia/Desktop/ameliachu.github.io/realtime_bike/arima-resid-acf.csv", row.names = FALSE)
+
+arima.resid.pacf <- Pacf(resid, na.action = na.pass, plot = FALSE)
+arima.resid.pacf.table <- data.frame( arima.resid.pacf$acf)
+names(arima.resid.pacf.table) <- c("pacf")
+write.csv(arima.resid.pacf.table, file="/Users/chuamelia/Desktop/ameliachu.github.io/realtime_bike/arima-resid-pacf.csv", row.names = FALSE)
+
+arima.resid2.acf <- Acf(resid^2, na.action = na.pass, plot = FALSE)
+arima.resid2.acf.table <- as.data.frame( arima.resid2.acf$acf)[-1,]
+arima.resid2.acf.table <- as.data.frame( arima.resid2.acf.table)
+names(arima.resid2.acf.table) <- c("acf")
+write.csv(arima.resid2.acf.table, file="/Users/chuamelia/Desktop/ameliachu.github.io/realtime_bike/arima-resid2-acf.csv", row.names = FALSE)
+
+arima.resid2.pacf <- Pacf(resid^2, na.action = na.pass, plot = FALSE)
+arima.resid2.pacf.table <- data.frame( arima.resid2.pacf$acf)
+names(arima.resid2.pacf.table) <- c("pacf")
+write.csv(arima.resid2.pacf.table, file="/Users/chuamelia/Desktop/ameliachu.github.io/realtime_bike/arima-resid2-pacf.csv", row.names = FALSE)
+
+arima.resid.ts.table <- data.frame(date,resid)
+write.csv(arima.resid.ts.table, file="/Users/chuamelia/Desktop/ameliachu.github.io/realtime_bike/arima-resid-ts.csv", row.names = FALSE)
+
